@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "annyang": "^2.6.1",
+    "bing-chat": "^0.2.3",
+    "bootstrap": "^5.3.2",
     "next": "14.1.0",
     "react": "^18",
     "react-dom": "^18"

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 const IndexPage = () => {
   const [listening, setListening] = useState(false);
-  const [response, setResponse] = useState("");
+  const [response, setResponse] = useState("सारथीलाई बोलाउनुहोस्");
 
   useEffect(() => {
     const startListening = () => {
@@ -12,7 +12,7 @@ const IndexPage = () => {
         window.webkitSpeechRecognition ||
         window.mozSpeechRecognition ||
         window.msSpeechRecognition)();
-      recognition.lang = "en-EN"; // Set the language
+      recognition.lang = "ne-NP"; // Set the language
 
       recognition.onstart = () => {
         console.log("Listening...");
@@ -23,20 +23,22 @@ const IndexPage = () => {
         const transcript =
           event.results[event.results.length - 1][0].transcript.trim();
         console.log("Transcript:", transcript);
+        const nepaliSarathiRegex = /सारथी|सरथी|सारथि|सारथे|सारथ|सरथि|शारथि/;
 
-        if (transcript.toLowerCase() === "hello ram") {
+        setResponse(transcript);
+
+        if (nepaliSarathiRegex.test(transcript)) {
           // Respond to the trigger phrase
-          setResponse("Hello! How can I assist you today?");
-          speakResponse("Hello! How can I assist you today?");
-          // You can add more sophisticated response logic here based on what the user says
-          // For example, you could analyze the transcript and respond differently to different commands
-        } else if (transcript.toLowerCase() === "goodbye ram") {
-          // If the user says "bye", end the conversation
+          setResponse(transcript);
+          speakResponse(
+            "सारथी तपाईंको सेवामा हाजिर छे। तपाईँलाई वडा सम्बन्धी केही काममा समस्या परेमा कृपया आफ्नो समस्या सुनाइदिनुहोला|"
+          );
+        } else if (transcript.toLowerCase() === "goodbye") {
           setResponse("Goodbye!");
           speakResponse("Goodbye!");
           recognition.stop();
         } else {
-          const q = encodeURIComponent(transcript); // Assuming `transcript` contains the user's query
+          const q = encodeURIComponent(transcript);
           const uri = "https://api.wit.ai/message?v=20230215&q=" + q;
           const auth = "Bearer " + "5XOI7ZDMVLYIEMSVHLTXEYJ2GLGLLEUF"; // Make sure CLIENT_TOKEN contains your Wit.ai API token
           fetch(uri, { headers: { Authorization: auth } })
@@ -51,7 +53,6 @@ const IndexPage = () => {
                   ? res.intents[0].name
                   : null;
               console.log("Intent : " + intent);
-              // Example: Perform action based on intent
               if (intent === "Alive_Verification") {
                 speakResponse(
                   "To verify your existence, please provide your current contact information and any official identification documents."
@@ -255,7 +256,12 @@ const IndexPage = () => {
                   "To determine eligibility based on weak economic condition, we need details about your financial situation and any supporting documents."
                 );
               } else {
-                /* speakResponse("I am not able to understand you, Can you please repeat it again"); */
+                /* speakResponse(
+                  "तपाईले के भन्नु भएको छ मैले ठ्याक्कै बुझिन, कृपया स्पष्ट रूपमा भन्न सक्नुहुन्छ"
+                ); */
+                setResponse(
+                  "तपाईले के भन्नु भएको छ मैले ठ्याक्कै बुझिन, कृपया स्पष्ट रूपमा भन्न सक्नुहुन्छ"
+                );
               }
             })
             .catch((error) => {
@@ -295,7 +301,7 @@ const IndexPage = () => {
 
   const speakResponse = (text) => {
     const synth = window.speechSynthesis;
-    const voices = synth.getVoices();
+    const voices = synth.getVoices().filter((voice) => voice.lang === "hi-IN");
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = voices[0];
     synth.speak(utterance);
@@ -303,8 +309,31 @@ const IndexPage = () => {
 
   return (
     <div>
-      <p>{response}</p>
-      {listening && <p>Listening...</p>}
+      <div className="container d-flex justify-content-center">
+        <img src="/listening.png" alt="toppar" className="img-fluid small" />
+      </div>
+      <div className="row row-cols-3">
+        <div className="col"></div>
+        <div className="col">
+          <img src="/wardko.png" alt="toppar" className="img-fluid" />
+        </div>
+        <div className="col"></div>
+      </div>
+      <div className="main">
+        <img src="/speakk.png" alt="waves" className="img-fluid" />
+        <div className="speak-section2">
+          <div className="container mt-3 text-center">
+            <h5 className="fw-bold text-center fs-1">
+              {response === "सारथीलाई बोलाउनुहोस्"
+                ? "सारथीलाई बोलाउनुहोस्"
+                : `You said : ${response}`}
+            </h5>
+
+            <p>{response}</p>
+            {listening && <p>Listening...</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
