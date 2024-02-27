@@ -256,12 +256,29 @@ const IndexPage = () => {
                   "To determine eligibility based on weak economic condition, we need details about your financial situation and any supporting documents."
                 );
               } else {
-                /* speakResponse(
-                  "तपाईले के भन्नु भएको छ मैले ठ्याक्कै बुझिन, कृपया स्पष्ट रूपमा भन्न सक्नुहुन्छ"
-                ); */
-                setResponse(
-                  "तपाईले के भन्नु भएको छ मैले ठ्याक्कै बुझिन, कृपया स्पष्ट रूपमा भन्न सक्नुहुन्छ"
-                );
+                let form = new FormData();
+                form.append("prompt", transcript);
+                fetch("http://120.0.0.1/robot/", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "multipart/form-data",
+                  },
+                  body: form,
+                })
+                  .then(async (res) => {
+                    const reader = res.body.getReader();
+                    let receivedResponses = "";
+
+                    while (true) {
+                      const { done, value } = await reader.read();
+                      if (done) break;
+                      receivedResponses += new TextDecoder().decode(value);
+                      console.log(receivedResponses);
+                    }
+                  })
+                  .catch((error) => {
+                    console.error("Error fetching data from OpenAI:", error);
+                  });
               }
             })
             .catch((error) => {

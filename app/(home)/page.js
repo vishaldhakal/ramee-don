@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const [listening, setListening] = useState(false);
   const [response, setResponse] = useState("सारथीलाई बोलाउनुहोस्");
+  const [socresponse, setSocResponse] = useState("");
   const router = useRouter();
 
   const speakResponse = (text) => {
@@ -13,6 +14,17 @@ export default function Home() {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.voice = voices[0];
     synth.speak(utterance);
+  };
+
+  const socket = new WebSocket("ws://localhost:8765");
+
+  socket.onopen = function (event) {
+    console.log("WebSocket connection established.");
+  };
+
+  socket.onmessage = function (event) {
+    /* console.log("Received message from server:", event.data); */
+    setSocResponse((prevResponse) => prevResponse + event.data);
   };
 
   useEffect(() => {
@@ -44,6 +56,8 @@ export default function Home() {
           setTimeout(() => {
             router.push("/listen");
           }, 15000);
+        } else {
+          socket.send(transcript);
         }
 
         setResponse(transcript);
@@ -100,6 +114,7 @@ export default function Home() {
         <div className="col"></div>
         <div className="col">
           <img src="/wardko.png" alt="toppar" className="img-fluid" />
+          <p>{socresponse}</p>
         </div>
         <div className="col"></div>
       </div>
