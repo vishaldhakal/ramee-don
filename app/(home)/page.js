@@ -7,25 +7,66 @@ export default function Home() {
   const [response, setResponse] = useState("सारथीलाई बोलाउनुहोस्");
   const [socresponse, setSocResponse] = useState("");
   const router = useRouter();
+  const [socket, setSocket] = useState(null);
+
+  let wordBuffer = ""; // Buffer to store letters until a complete word is formed
 
   const speakResponse = (text) => {
     const synth = window.speechSynthesis;
     const voices = synth.getVoices().filter((voice) => voice.lang === "hi-IN");
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.voice = voices[0];
-    synth.speak(utterance);
+
+    // Iterate through each received letter
+    for (const letter of text) {
+      // If it's not a space, add it to the buffer
+      if (letter !== " ") {
+        wordBuffer += letter;
+      } else {
+        // If it's a space, speak the buffered word and clear the buffer
+        speakWord(wordBuffer);
+        wordBuffer = "";
+      }
+    }
+
+    /* // Speak any remaining word in the buffer after the loop ends
+    if (wordBuffer) {
+      speakWord(wordBuffer);
+    } */
+
+    function speakWord(word) {
+      const utterance = new SpeechSynthesisUtterance(word);
+      utterance.voice = voices[0];
+      synth.speak(utterance);
+    }
   };
 
-  const socket = new WebSocket("ws://localhost:8765");
+  useEffect(() => {
+    // Initialize WebSocket connection
+    const newSocket = new WebSocket("ws://localhost:5050");
+    setSocket(newSocket);
 
-  socket.onopen = function (event) {
-    console.log("WebSocket connection established.");
-  };
+    newSocket.onopen = function (event) {
+      console.log("WebSocket connection established.");
+    };
 
-  socket.onmessage = function (event) {
-    /* console.log("Received message from server:", event.data); */
-    setSocResponse((prevResponse) => prevResponse + event.data);
-  };
+    newSocket.onmessage = function (event) {
+      const receivedMessage = event.data;
+      console.log("Received message from server:", receivedMessage);
+      setSocResponse(receivedMessage);
+      speakResponse(receivedMessage); // Speak what socket is sending
+    };
+
+    newSocket.onclose = function (event) {
+      console.log("WebSocket connection closed.");
+      // Handle WebSocket closed event if needed
+    };
+
+    // Cleanup on component unmount
+    return () => {
+      if (newSocket.readyState === WebSocket.OPEN) {
+        newSocket.close();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const startListening = () => {
@@ -57,7 +98,15 @@ export default function Home() {
             router.push("/listen");
           }, 15000);
         } else {
-          socket.send(transcript);
+          if (socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(
+              transcript +
+                " act as a nepals chatbot and answer the question in nepali all time within one small sentence only"
+            );
+          } else {
+            console.error("WebSocket connection is not open.");
+            // Handle the WebSocket not open scenario (e.g., display an error message)
+          }
         }
 
         setResponse(transcript);
